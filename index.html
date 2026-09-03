@@ -1,12 +1,30 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d"><link rel="manifest" href="manifest.json">
-<title>Character Studio</title><link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>Character Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0b0d;color:#f5f5f7;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+header{height:74px;border-bottom:1px solid #25252a;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;background:#0b0b0df5;z-index:5}
+header strong{display:block;font-size:20px}header small{color:#8d8d96}
+.app{display:grid;grid-template-columns:1fr 230px;min-height:calc(100vh - 74px)}
+aside{grid-column:2;border-left:1px solid #25252a;padding:20px 14px;display:flex;flex-direction:column;gap:8px}
+main{grid-column:1;padding:30px;max-width:1200px;width:100%;margin:auto}
+.nav{border:0;background:transparent;color:#aaa;padding:15px 16px;border-radius:12px;text-align:right;font-size:16px;cursor:pointer}
+.nav:hover,.nav.active{background:#1d1d22;color:#fff}.page{display:none}.page.active{display:block}
+.hero,.panel{background:#151519;border:1px solid #29292f;border-radius:24px;padding:30px;margin-bottom:20px}
+.hero{min-height:250px;display:flex;flex-direction:column;justify-content:center}.hero span{color:#999;border:1px solid #3b3b42;border-radius:30px;padding:8px 14px;width:max-content}.hero h1{font-size:48px;margin:20px 0 8px}.hero p{font-size:18px;color:#bdbdc5}
+textarea{width:100%;min-height:150px;background:#0e0e11;color:#fff;border:1px solid #34343b;border-radius:14px;padding:16px;font-size:16px;resize:vertical}
+button.primary{margin-top:14px;background:#fff;color:#111;border:0;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;cursor:pointer}
+button.primary:active{transform:scale(.98)}.result{margin-top:18px;white-space:pre-wrap;line-height:1.8;color:#ddd;background:#0e0e11;border:1px solid #303039;border-radius:14px;padding:18px;display:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px}.card{background:#101014;border:1px solid #2a2a31;border-radius:16px;padding:18px}.card b{display:block;margin-bottom:8px}.muted{color:#999}.list{display:grid;gap:10px}.item{padding:14px;background:#101014;border:1px solid #29292f;border-radius:12px}
+@media(max-width:800px){.app{display:block}aside{position:fixed;bottom:0;right:0;left:0;height:auto;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #29292f;border-left:0;background:#0b0b0df5;padding:6px}.nav{font-size:11px;text-align:center;padding:10px 3px}main{padding:18px 14px 100px}.hero h1{font-size:34px}}
+</style>
 </head>
 <body>
-<header><div><strong>Character Studio</strong><small>Autonomous Character Engine</small></div><button id="install" hidden>نصب اپ</button></header>
+<header><div><strong>Character Studio</strong><small>Autonomous Character Engine</small></div></header>
 <div class="app">
 <aside>
 <button class="nav active" data-page="home">⌂ داشبورد</button>
@@ -17,86 +35,57 @@
 </aside>
 <main>
 <section id="home" class="page active">
-<div class="hero"><span>IDENTITY SYSTEM • LOCKED</span><h1>Character Studio</h1><p>یک درخواست ساده بده؛ سیستم ترکیب خلاقانه را خودش می‌سازد.</p><button class="primary" id="start">شروع ساخت</button></div>
-<div id="cards" class="cards"></div>
-<div class="panel"><h2>Creative Request</h2><textarea id="idea" placeholder="مثلاً: یک صحنه سینمایی قدرتمند در یک دفتر لوکس در شب"></textarea><button class="primary" id="generate">ساخت Prompt نهایی</button><pre id="result">هنوز چیزی ساخته نشده.</pre><button class="secondary" id="copy">کپی Prompt</button></div>
+<div class="hero"><span>IDENTITY SYSTEM • LOCKED</span><h1>Character Studio</h1><p>یک درخواست ساده بده؛ سیستم ترکیب خلاقانه را خودش می‌سازد.</p></div>
+<div class="panel"><h2>Creative Request</h2><textarea id="idea" placeholder="مثلاً: یک صحنه سینمایی قدرتمند در یک دفتر لوکس در شب"></textarea><button id="build" class="primary">ساخت Prompt نهایی</button><div id="result" class="result"></div></div>
 </section>
-<section id="characters" class="page"><div class="panel"><h2>Characters</h2><div id="chars"></div><div class="row"><input id="name" placeholder="نام Character"><button class="primary" id="add">افزودن</button></div></div></section>
-<section id="libraries" class="page"><div class="panel"><h2>Libraries</h2><div id="libs"></div></div></section>
-<section id="engine" class="page"><div class="panel"><h2>Autonomous Creative Engine</h2><p>هسته خلاق به‌صورت ماژولار عمل می‌کند و هویت را بالاتر از تمام متغیرهای بصری قرار می‌دهد.</p><div id="rules"></div></div></section>
-<section id="settings" class="page"><div class="panel"><h2>تنظیمات</h2><p>اطلاعات نسخه و وضعیت ذخیره‌سازی</p><div id="status"></div><button class="secondary" id="reset">بازنشانی داده‌های محلی</button></div></section>
-</main></div>
+<section id="characters" class="page"><div class="panel"><h2>Characters</h2><div id="chars" class="list"></div></div></section>
+<section id="libraries" class="page"><div class="panel"><h2>Libraries</h2><div class="cards">
+<div class="card"><b>Pose Library</b><span class="muted">27 Pose قفل‌شده</span></div>
+<div class="card"><b>Outfit Library</b><span class="muted">Classic Executive</span></div>
+<div class="card"><b>Expression</b><span class="muted">6 Expression</span></div>
+<div class="card"><b>Camera</b><span class="muted">16 Preset</span></div>
+<div class="card"><b>Lighting</b><span class="muted">12 Preset</span></div>
+<div class="card"><b>Environment</b><span class="muted">12 Preset</span></div>
+</div></div></section>
+<section id="engine" class="page"><div class="panel"><h2>Autonomous Creative Engine</h2><p>سیستم متغیرهای معمول را خودکار انتخاب می‌کند و هویت قفل‌شده را در اولویت مطلق نگه می‌دارد.</p><div class="item">Identity → Body/Face → Pose → Outfit → Expression → Camera → Lighting → Environment → Accessories → Composition</div></div></section>
+<section id="settings" class="page"><div class="panel"><h2>تنظیمات</h2><button id="reset" class="primary">بازنشانی داده‌های محلی</button><p class="muted">اطلاعات این نسخه فقط روی همین مرورگر ذخیره می‌شود.</p></div></section>
+</main>
+</div>
 <script>
-const L={
-Pose:27,Outfit:1,Expression:6,Camera:16,Lighting:12,Environment:12
-};
-const poses=[
-"POWER / One Foot on Stool","POCKET + FOOT ON STOOL","DOUBLE POCKET STANCE","SOFA / RELAXED AUTHORITY",
-"LOW FOOT / DOMINANT CAMERA","CHAIR POWER","DOMINANT CHAIR","TALL STOOL / CONFIDENT SEATED",
-"STOOL / CONFIDENT POWER","ARMCHAIR / LEGS EXTENDED / BAREFOOT","VICTORY STANCE / CENTERED AUTHORITY",
-"EXECUTIVE LEAN / CONTROLLED DOMINANCE","SEATED / ONE LEG CROSSED / CONFIDENT AUTHORITY",
-"SEATED / RELAXED SIDE LEAN / POWERFUL AUTHORITY","STANDING / THREE-QUARTER POWER POSE",
-"SEATED / POWERFUL RELAXED AUTHORITY","POWER / ONE FOOT ON STOOL / BOTH HANDS ON WAIST",
-"SEATED / ONE LEG CROSSED / CONFIDENT AUTHORITY","EXECUTIVE SOFA / ONE LEG EXTENDED",
-"DEEP SOFA / WIDE CONFIDENT STANCE","EXECUTIVE CHAIR / SIDEWAYS SEATED",
-"STANDING / ONE-HAND-ON-TABLE","STANDING / ONE HAND IN POCKET / JACKET HOLD",
-"STANDING / BOTH HANDS ON DESK","SOFA / MASCULINE-INSPIRED LEG-ON-THIGH",
-"EXECUTIVE ARMCHAIR / LEAN-BACK","EXECUTIVE DESK / BOTH LEGS FULLY EXTENDED / LOW FRONT-RIGHT"];
-const expr=["CONFIDENT NEUTRAL","PROUD / SUPERIOR","SERIOUS AUTHORITY","SUBTLE CONFIDENT SMILE","COLD DOMINANCE","CALM / RELAXED CONFIDENCE"];
-const cams=["EYE-LEVEL PORTRAIT","LOW-ANGLE AUTHORITY","LOW FRONT-RIGHT","LOW FRONT-LEFT","THREE-QUARTER FRONT","THREE-QUARTER REAR","FULL-BODY CENTERED","MEDIUM FULL-BODY","WIDE ENVIRONMENTAL","CLOSE-UP IDENTITY","MEDIUM PORTRAIT","DESK / TABLE LOW ANGLE","SEATED DOMINANT LOW ANGLE","SIDE PROFILE","OVER-THE-SHOULDER","CINEMATIC WIDE"];
-const light=["SOFT EXECUTIVE STUDIO","CINEMATIC KEY + SOFT FILL","DRAMATIC SIDE LIGHT","LOW-KEY CORPORATE","WARM LUXURY INTERIOR","COOL MODERN INTERIOR","WINDOW LIGHT","GOLDEN HOUR","NIGHT CITY AMBIENT","HIGH-CONTRAST CINEMATIC","SOFT EDITORIAL","DARK MOODY EXECUTIVE"];
-const env=["LUXURY EXECUTIVE OFFICE","DARK EXECUTIVE BOARDROOM","PREMIUM PENTHOUSE","LUXURY HOTEL SUITE","MODERN LUXURY LIVING ROOM","DARK LEATHER EXECUTIVE LOUNGE","CINEMATIC STUDIO","LUXURY ROOFTOP","NIGHT CITY PENTHOUSE","CLASSIC LUXURY LIBRARY","MODERN CORPORATE HALL","MINIMALIST ARCHITECTURAL INTERIOR"];
-const outfit="CLASSIC EXECUTIVE — black double-breasted tailored blazer, subtle gold buttons; crisp white button-up blouse; high-waisted gray tailored trousers; black leather belt; black leather ankle boots";
-let chars=JSON.parse(localStorage.getItem("cs_chars")||"null")||[{name:"Character 01",status:"Independent identity • Identity Anchor locked"}];
-const $=s=>document.querySelector(s), pick=a=>a[Math.floor(Math.random()*a.length)];
-document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("#"+b.dataset.page).classList.add("active")});
-function render(){
-$("#cards").innerHTML=[["Characters",chars.length],["Poses",27],["Outfits",1],["Expressions",6],["Cameras",16],["Lighting",12],["Environments",12],["Identity","LOCKED"]].map(x=>`<div class="card"><b>${x[1]}</b><small>${x[0]}</small></div>`).join("");
-$("#chars").innerHTML=chars.map(c=>`<div class="item"><b>${c.name}</b><br><small>${c.status}</small></div>`).join("");
-$("#libs").innerHTML=Object.entries(L).map(([k,v])=>`<div class="item"><b>${k}</b> — ${v} registered entries • LOCKED</div>`).join("");
-$("#rules").innerHTML=["Original Reference / Identity Anchor is the sole identity authority","Never slim, reshape, elongate, beautify, age, or redesign the character","Generated images are never identity references","Independent Characters never inherit identity from one another","Engine chooses routine creative variables autonomously","Photorealistic, anatomically plausible output is mandatory"].map(x=>`<div class="lock">✓ ${x}</div>`).join("");
-$("#status").innerHTML=`<div class="lock">Version: 2.0 • Local data: active • PWA: supported browser</div>`;
-}
-$("#add").onclick=()=>{let n=$("#name").value.trim();if(!n)return;chars.push({name:n,status:"Independent identity • Identity Anchor locked"});localStorage.setItem("cs_chars",JSON.stringify(chars));$("#name").value="";render()};
-$("#start").onclick=()=>{$('[data-page="home"]').click();$("#idea").focus()};
-$("#generate").onclick=()=>{let idea=$("#idea").value.trim()||"Create a premium cinematic executive character scene";$("#result").textContent=`CHARACTER STUDIO — FINAL GENERATION PROMPT
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function show(page){$$('.page').forEach(x=>x.classList.toggle('active',x.id===page));$$('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page===page));location.hash=page}
+$$('.nav').forEach(b=>b.addEventListener('click',()=>show(b.dataset.page)));
+const pose='Pose Library: use an existing locked pose when appropriate; avoid duplicates.';
+const identity='IMMUTABLE IDENTITY ANCHOR: use ONLY the original reference image as identity authority. Preserve exact face, facial structure, skin tone, hair identity, adult age appearance, body volume, body proportions, height impression and silhouette. Never slim, reshape, beautify, elongate, narrow waist, reduce hips/thighs/legs, or create fashion-model proportions.';
+const build=()=>{
+ const idea=$('#idea').value.trim();
+ if(!idea){$('#idea').focus();$('#result').style.display='block';$('#result').textContent='لطفاً ابتدا درخواست خلاقانه را وارد کن.';return}
+ const prompt=`CHARACTER STUDIO — FINAL GENERATION PROMPT
 
-CREATIVE REQUEST:
+Creative request:
 ${idea}
 
 IDENTITY:
-Preserve the selected Character's immutable Original Reference / Identity Anchor exactly. Same woman, different pose/outfit/environment. Preserve exact facial identity, facial structure, eyes, eyebrows, nose, lips, jawline, cheeks, chin, ears, skin tone, hair identity, apparent age, body volume, body proportions, height impression and silhouette.
+${identity}
 
-POSE:
-${pick(poses)}
+AUTONOMOUS CREATIVE ENGINE:
+Resolve missing Archetype, Genre, Era/World, Styling & Harmony, Accessories, Pose, Expression, Scene, Lighting, Camera and Composition autonomously. Prefer existing locked libraries before inventing new values.
 
-OUTFIT:
-${outfit}
+LOCKED LIBRARIES:
+${pose}
+Outfit Library: Outfit 01 — CLASSIC EXECUTIVE: black double-breasted tailored blazer with subtle gold buttons; crisp white button-up blouse; high-waisted gray tailored trousers; black leather belt; black leather ankle boots.
+Expression Library: choose a natural compatible expression.
+Camera/Lighting/Environment: choose the most cinematic compatible presets automatically.
 
-EXPRESSION:
-${pick(expr)}
-
-CAMERA & FRAMING:
-${pick(cams)}
-
-LIGHTING:
-${pick(light)}
-
-ENVIRONMENT:
-${pick(env)}
-
-STYLE:
-premium photorealistic cinematic editorial photography, realistic materials, natural skin texture, anatomically plausible proportions, physically coherent perspective, high detail, controlled composition.
-
-STRICT PRESERVATION:
-No identity drift, no different face, no slimming, no fashion-model body, no altered waist/hips/thighs/legs, no elongated limbs, no changed hair identity, no age change, no artificial beautification, no anatomy errors, no distorted hands or feet.`};
+OUTPUT:
+Photorealistic, premium cinematic/editorial realism, anatomically plausible, physically coherent perspective, natural skin and hair detail. Identity always overrides all creative variables. Generated images are never identity references.`;
+ $('#result').style.display='block';$('#result').textContent=prompt;
+ localStorage.setItem('lastPrompt',prompt);
 };
-$("#copy").onclick=async()=>{await navigator.clipboard.writeText($("#result").textContent);$("#copy").textContent="کپی شد ✓";setTimeout(()=>$("#copy").textContent="کپی Prompt",1200)};
-$("#reset").onclick=()=>{if(confirm("داده‌های محلی پاک شود؟")){localStorage.removeItem("cs_chars");location.reload()}};
-let deferred;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("#install").hidden=false});
-$("#install").onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null;$("#install").hidden=true}};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
-render();
+$('#build').addEventListener('click',build);
+$('#idea').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')build()});
+$('#reset').addEventListener('click',()=>{if(confirm('داده‌های محلی پاک شود؟')){localStorage.clear();alert('انجام شد.')}});
+if(location.hash) show(location.hash.slice(1));
 </script>
-</body></html>
+</body>
+</html>
