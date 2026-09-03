@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d"><link rel="manifest" href="manifest.json">
+<title>Character Studio</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header><div><strong>Character Studio</strong><small>Autonomous Character Engine</small></div><button id="install" hidden>نصب اپ</button></header>
+<div class="app">
+<aside>
+<button class="nav active" data-page="home">⌂ داشبورد</button>
+<button class="nav" data-page="characters">◉ Characters</button>
+<button class="nav" data-page="libraries">▦ Libraries</button>
+<button class="nav" data-page="engine">✦ Creative Engine</button>
+<button class="nav" data-page="settings">⚙ تنظیمات</button>
+</aside>
+<main>
+<section id="home" class="page active">
+<div class="hero"><span>IDENTITY SYSTEM • LOCKED</span><h1>Character Studio</h1><p>یک درخواست ساده بده؛ سیستم ترکیب خلاقانه را خودش می‌سازد.</p><button class="primary" id="start">شروع ساخت</button></div>
+<div id="cards" class="cards"></div>
+<div class="panel"><h2>Creative Request</h2><textarea id="idea" placeholder="مثلاً: یک صحنه سینمایی قدرتمند در یک دفتر لوکس در شب"></textarea><button class="primary" id="generate">ساخت Prompt نهایی</button><pre id="result">هنوز چیزی ساخته نشده.</pre><button class="secondary" id="copy">کپی Prompt</button></div>
+</section>
+<section id="characters" class="page"><div class="panel"><h2>Characters</h2><div id="chars"></div><div class="row"><input id="name" placeholder="نام Character"><button class="primary" id="add">افزودن</button></div></div></section>
+<section id="libraries" class="page"><div class="panel"><h2>Libraries</h2><div id="libs"></div></div></section>
+<section id="engine" class="page"><div class="panel"><h2>Autonomous Creative Engine</h2><p>هسته خلاق به‌صورت ماژولار عمل می‌کند و هویت را بالاتر از تمام متغیرهای بصری قرار می‌دهد.</p><div id="rules"></div></div></section>
+<section id="settings" class="page"><div class="panel"><h2>تنظیمات</h2><p>اطلاعات نسخه و وضعیت ذخیره‌سازی</p><div id="status"></div><button class="secondary" id="reset">بازنشانی داده‌های محلی</button></div></section>
+</main></div>
+<script>
+const L={
+Pose:27,Outfit:1,Expression:6,Camera:16,Lighting:12,Environment:12
+};
+const poses=[
+"POWER / One Foot on Stool","POCKET + FOOT ON STOOL","DOUBLE POCKET STANCE","SOFA / RELAXED AUTHORITY",
+"LOW FOOT / DOMINANT CAMERA","CHAIR POWER","DOMINANT CHAIR","TALL STOOL / CONFIDENT SEATED",
+"STOOL / CONFIDENT POWER","ARMCHAIR / LEGS EXTENDED / BAREFOOT","VICTORY STANCE / CENTERED AUTHORITY",
+"EXECUTIVE LEAN / CONTROLLED DOMINANCE","SEATED / ONE LEG CROSSED / CONFIDENT AUTHORITY",
+"SEATED / RELAXED SIDE LEAN / POWERFUL AUTHORITY","STANDING / THREE-QUARTER POWER POSE",
+"SEATED / POWERFUL RELAXED AUTHORITY","POWER / ONE FOOT ON STOOL / BOTH HANDS ON WAIST",
+"SEATED / ONE LEG CROSSED / CONFIDENT AUTHORITY","EXECUTIVE SOFA / ONE LEG EXTENDED",
+"DEEP SOFA / WIDE CONFIDENT STANCE","EXECUTIVE CHAIR / SIDEWAYS SEATED",
+"STANDING / ONE-HAND-ON-TABLE","STANDING / ONE HAND IN POCKET / JACKET HOLD",
+"STANDING / BOTH HANDS ON DESK","SOFA / MASCULINE-INSPIRED LEG-ON-THIGH",
+"EXECUTIVE ARMCHAIR / LEAN-BACK","EXECUTIVE DESK / BOTH LEGS FULLY EXTENDED / LOW FRONT-RIGHT"];
+const expr=["CONFIDENT NEUTRAL","PROUD / SUPERIOR","SERIOUS AUTHORITY","SUBTLE CONFIDENT SMILE","COLD DOMINANCE","CALM / RELAXED CONFIDENCE"];
+const cams=["EYE-LEVEL PORTRAIT","LOW-ANGLE AUTHORITY","LOW FRONT-RIGHT","LOW FRONT-LEFT","THREE-QUARTER FRONT","THREE-QUARTER REAR","FULL-BODY CENTERED","MEDIUM FULL-BODY","WIDE ENVIRONMENTAL","CLOSE-UP IDENTITY","MEDIUM PORTRAIT","DESK / TABLE LOW ANGLE","SEATED DOMINANT LOW ANGLE","SIDE PROFILE","OVER-THE-SHOULDER","CINEMATIC WIDE"];
+const light=["SOFT EXECUTIVE STUDIO","CINEMATIC KEY + SOFT FILL","DRAMATIC SIDE LIGHT","LOW-KEY CORPORATE","WARM LUXURY INTERIOR","COOL MODERN INTERIOR","WINDOW LIGHT","GOLDEN HOUR","NIGHT CITY AMBIENT","HIGH-CONTRAST CINEMATIC","SOFT EDITORIAL","DARK MOODY EXECUTIVE"];
+const env=["LUXURY EXECUTIVE OFFICE","DARK EXECUTIVE BOARDROOM","PREMIUM PENTHOUSE","LUXURY HOTEL SUITE","MODERN LUXURY LIVING ROOM","DARK LEATHER EXECUTIVE LOUNGE","CINEMATIC STUDIO","LUXURY ROOFTOP","NIGHT CITY PENTHOUSE","CLASSIC LUXURY LIBRARY","MODERN CORPORATE HALL","MINIMALIST ARCHITECTURAL INTERIOR"];
+const outfit="CLASSIC EXECUTIVE — black double-breasted tailored blazer, subtle gold buttons; crisp white button-up blouse; high-waisted gray tailored trousers; black leather belt; black leather ankle boots";
+let chars=JSON.parse(localStorage.getItem("cs_chars")||"null")||[{name:"Character 01",status:"Independent identity • Identity Anchor locked"}];
+const $=s=>document.querySelector(s), pick=a=>a[Math.floor(Math.random()*a.length)];
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("#"+b.dataset.page).classList.add("active")});
+function render(){
+$("#cards").innerHTML=[["Characters",chars.length],["Poses",27],["Outfits",1],["Expressions",6],["Cameras",16],["Lighting",12],["Environments",12],["Identity","LOCKED"]].map(x=>`<div class="card"><b>${x[1]}</b><small>${x[0]}</small></div>`).join("");
+$("#chars").innerHTML=chars.map(c=>`<div class="item"><b>${c.name}</b><br><small>${c.status}</small></div>`).join("");
+$("#libs").innerHTML=Object.entries(L).map(([k,v])=>`<div class="item"><b>${k}</b> — ${v} registered entries • LOCKED</div>`).join("");
+$("#rules").innerHTML=["Original Reference / Identity Anchor is the sole identity authority","Never slim, reshape, elongate, beautify, age, or redesign the character","Generated images are never identity references","Independent Characters never inherit identity from one another","Engine chooses routine creative variables autonomously","Photorealistic, anatomically plausible output is mandatory"].map(x=>`<div class="lock">✓ ${x}</div>`).join("");
+$("#status").innerHTML=`<div class="lock">Version: 2.0 • Local data: active • PWA: supported browser</div>`;
+}
+$("#add").onclick=()=>{let n=$("#name").value.trim();if(!n)return;chars.push({name:n,status:"Independent identity • Identity Anchor locked"});localStorage.setItem("cs_chars",JSON.stringify(chars));$("#name").value="";render()};
+$("#start").onclick=()=>{$('[data-page="home"]').click();$("#idea").focus()};
+$("#generate").onclick=()=>{let idea=$("#idea").value.trim()||"Create a premium cinematic executive character scene";$("#result").textContent=`CHARACTER STUDIO — FINAL GENERATION PROMPT
+
+CREATIVE REQUEST:
+${idea}
+
+IDENTITY:
+Preserve the selected Character's immutable Original Reference / Identity Anchor exactly. Same woman, different pose/outfit/environment. Preserve exact facial identity, facial structure, eyes, eyebrows, nose, lips, jawline, cheeks, chin, ears, skin tone, hair identity, apparent age, body volume, body proportions, height impression and silhouette.
+
+POSE:
+${pick(poses)}
+
+OUTFIT:
+${outfit}
+
+EXPRESSION:
+${pick(expr)}
+
+CAMERA & FRAMING:
+${pick(cams)}
+
+LIGHTING:
+${pick(light)}
+
+ENVIRONMENT:
+${pick(env)}
+
+STYLE:
+premium photorealistic cinematic editorial photography, realistic materials, natural skin texture, anatomically plausible proportions, physically coherent perspective, high detail, controlled composition.
+
+STRICT PRESERVATION:
+No identity drift, no different face, no slimming, no fashion-model body, no altered waist/hips/thighs/legs, no elongated limbs, no changed hair identity, no age change, no artificial beautification, no anatomy errors, no distorted hands or feet.`};
+$("#copy").onclick=async()=>{await navigator.clipboard.writeText($("#result").textContent);$("#copy").textContent="کپی شد ✓";setTimeout(()=>$("#copy").textContent="کپی Prompt",1200)};
+$("#reset").onclick=()=>{if(confirm("داده‌های محلی پاک شود؟")){localStorage.removeItem("cs_chars");location.reload()}};
+let deferred;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("#install").hidden=false});
+$("#install").onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null;$("#install").hidden=true}};
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+render();
+</script>
+</body></html>
