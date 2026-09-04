@@ -1,0 +1,1 @@
+{"name":"Character Studio","short_name":"Character Studio","description":"Autonomous Character Engine","start_url":"./?source=pwa","scope":"./","display":"standalone","background_color":"#08090d","theme_color":"#08090d","orientation":"any","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
