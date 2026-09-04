@@ -1,17 +1,5 @@
-const CACHE='character-studio-v7';
+const CACHE='character-studio-v8';
 const APP=['./','./index.html','./pwa.html','./director.html','./manifest.webmanifest','./icon.svg'];
-
-self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()));
-});
-self.addEventListener('activate',event=>{
-  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
-});
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET')return;
-  const u=new URL(event.request.url);if(u.origin!==location.origin)return;
-  const path=u.pathname;
-  const shell=path.endsWith('/pwa.html')||path.endsWith('/director.html')||path.endsWith('/index.html')||path.endsWith('/manifest.webmanifest')||path.endsWith('/sw.js');
-  if(shell){event.respondWith(fetch(event.request,{cache:'no-store'}).then(async r=>{if(r.ok&&!path.endsWith('/sw.js')){const copy=r.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{})}return r}).catch(()=>caches.match(event.request).then(c=>c||caches.match('./pwa.html'))));return}
-  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{});return r}).catch(()=>caches.match('./pwa.html')||caches.match('./index.html'))));
-});
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const u=new URL(event.request.url);if(u.origin!==location.origin)return;const path=u.pathname;const shell=path.endsWith('/pwa.html')||path.endsWith('/director.html')||path.endsWith('/index.html')||path.endsWith('/manifest.webmanifest')||path.endsWith('/sw.js');if(shell){event.respondWith(fetch(event.request,{cache:'no-store'}).then(async r=>{if(r.ok&&!path.endsWith('/sw.js')){const copy=r.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{})}return r}).catch(()=>caches.match(event.request).then(c=>c||caches.match('./pwa.html'))));return}event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{});return r}).catch(()=>caches.match('./pwa.html')||caches.match('./index.html'))));});
