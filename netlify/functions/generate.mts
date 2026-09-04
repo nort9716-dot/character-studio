@@ -21,57 +21,42 @@ export default async (req: Request) => {
     const prompt = String(body?.prompt || '').trim();
     if (!prompt) return json({ error: 'Prompt is required.' }, 400);
 
-    const reference = typeof body?.reference === 'string' && body.reference.startsWith('data:image/')
-      ? body.reference
-      : null;
-
-    const input = [
-      {
-        role: 'user',
-        content: reference
-          ? [
-              { type: 'input_text', text: prompt },
-              { type: 'input_image', image_url: reference, detail: 'high' }
-            ]
-          : [{ type: 'input_text', text: prompt }]
-      }
-    ];
-
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.6-luna',
-        input,
-        tools: [
-          {
-            type: 'image_generation',
-            model: 'gpt-image-2',
-            size: '1024x1536',
-            quality: 'high',
-            output_format: 'png'
-          }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return json(
-        { error: data?.error?.message || `OpenAI request failed (${response.status}).` },
-        response.status
-      );
+    // Text mode powers the Dialogue / Language Engine without touching image generation.
+    if (body?.mode === 'dialogue') {
+      const system = `You are the Character Studio Dialogue & Language Engine. Handle Tabrizi Azerbaijani carefully. The user may want Azerbaijani spoken in Tabriz written with Persian script, with Persian-script diacritics added only to clarify pronunciation; optionally provide a Latin phonetic transcription of the SAME spoken words, not an English translation; optionally provide a faithful English translation. Never replace a requested phonetic transcription with translation. Preserve colloquial Tabrizi pronunciation, tone, intent and meaning. Do not invent a different dialect. Return clean JSON with keys: persian_script, latin_phonetic, english_translation. If an output is not requested, return an empty string for that key.`;
+      const response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-5.6-luna',
+          input: [
+            { role: 'system', content: [{ type: 'input_text', text: system }] },
+            { role: 'user', content: [{ type: 'input_text', text: prompt }] }
+          ]
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) return json({ error: data?.error?.message || `OpenAI request failed (${response.status}).` }, response.status);
+      const text = Array.isArray(data?.output)
+        ? data.output.filter((x: any) => x?.type === 'message').flatMap((x: any) => x?.content || []).map((x: any) => x?.text || '').join('')
+        : '';
+      if (!text) return json({ error: 'No dialogue result returned.' }, 502);
+      let parsed: any;
+      try { parsed = JSON.parse(text.replace(/^```json\s*/,'').replace(/\s*```$/,'')); }
+      catch { parsed = { persian_script: text, latin_phonetic: '', english_translation: '' }; }
+      return json({ dialogue: parsed });
     }
 
-    const call = Array.isArray(data?.output)
-      ? data.output.find((item: any) => item?.type === 'image_generation_call')
-      : null;
-
+    const reference = typeof body?.reference === 'string' && body.reference.startsWith('data:image/') ? body.reference : null;
+    const input = [{ role: 'user', content: reference ? [{ type: 'input_text', text: prompt }, { type: 'input_image', image_url: reference, detail: 'high' }] : [{ type: 'input_text', text: prompt }] }];
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-5.6-luna', input, tools: [{ type: 'image_generation', model: 'gpt-image-2', size: '1024x1536', quality: 'high', output_format: 'png' }] })
+    });
+    const data = await response.json();
+    if (!response.ok) return json({ error: data?.error?.message || `OpenAI request failed (${response.status}).` }, response.status);
+    const call = Array.isArray(data?.output) ? data.output.find((item: any) => item?.type === 'image_generation_call') : null;
     if (!call?.result) return json({ error: 'OpenAI completed the request but returned no image.' }, 502);
-
     return json({ image: `data:image/png;base64,${call.result}` });
   } catch (error: any) {
     console.error('Character Studio generation error:', error);
