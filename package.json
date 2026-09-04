@@ -11,9 +11,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
-    "openai": "^5.12.0"
-  },
-  "devDependencies": {
-    "wrangler": "^4.34.0"
+    "openai": "^5.12.0",
+    "wrangler": "^4.129.0"
   }
 }
