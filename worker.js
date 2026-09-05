@@ -1,9 +1,36 @@
-import { onRequest as generate } from './functions/api/generate.js';
+const LEGACY_API = 'https://character-studio-nort9716.netlify.app/api/generate';
 
 function sameOrigin(request, url) {
   const origin = request.headers.get('Origin');
   if (!origin) return true;
   try { return new URL(origin).origin === url.origin; } catch { return false; }
+}
+
+async function proxyApi(request, url) {
+  if (!sameOrigin(request, url)) {
+    return new Response(JSON.stringify({ error: 'Forbidden origin.' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
+    });
+  }
+
+  const headers = new Headers();
+  const contentType = request.headers.get('content-type');
+  if (contentType) headers.set('content-type', contentType);
+
+  const upstream = await fetch(LEGACY_API, {
+    method: request.method,
+    headers,
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer()
+  });
+
+  const responseHeaders = new Headers(upstream.headers);
+  responseHeaders.set('cache-control', 'no-store');
+  responseHeaders.set('x-content-type-options', 'nosniff');
+  responseHeaders.set('referrer-policy', 'no-referrer');
+  responseHeaders.set('x-character-studio-backend', 'netlify-bridge');
+  responseHeaders.delete('content-length');
+  return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: responseHeaders });
 }
 
 async function serveAsset(request, env) {
@@ -26,14 +53,9 @@ async function serveAsset(request, env) {
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
-
-    if (url.pathname === '/api/generate') {
-      if (!sameOrigin(request, url)) return new Response(JSON.stringify({ error: 'Forbidden origin.' }), { status: 403, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
-      return generate({ request, env, waitUntil: ctx.waitUntil.bind(ctx), next: () => new Response('Not found', { status: 404 }) });
-    }
-
+    if (url.pathname === '/api/generate') return proxyApi(request, url);
     return serveAsset(request, env);
   }
 };
