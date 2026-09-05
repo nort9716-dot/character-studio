@@ -7,8 +7,5 @@
   "assets": {
     "binding": "ASSETS",
     "directory": "."
-  },
-  "secrets": {
-    "required": ["OPENAI_API_KEY"]
   }
 }
