@@ -4,15 +4,16 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
 const rateMap = new Map();
 
-function json(body, status = 200) {
+function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json',
-      'cache-control': 'no-store',
+      'cache-control': 'no-store, no-cache, must-revalidate',
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'no-referrer',
-      'x-frame-options': 'DENY'
+      'x-frame-options': 'DENY',
+      ...extraHeaders
     }
   });
 }
@@ -31,6 +32,27 @@ function rateLimited(key) {
   if (old.count >= MAX_REQUESTS_PER_WINDOW) return true;
   old.count++;
   return false;
+}
+
+function getOpenAIKey(env) {
+  // Primary binding plus safe compatibility aliases for the temporary casing mistakes
+  // that existed while the Cloudflare secret was being created.
+  const names = ['OPENAI_API_KEY', 'OPENAI_API_key', 'OPENAI_API_Key', 'OPENAI_API_KEY1'];
+  for (const name of names) {
+    const value = typeof env?.[name] === 'string' ? env[name].trim() : '';
+    if (value) return { value, source: `env.${name}` };
+  }
+
+  // Cloudflare supports process.env when Node.js compatibility is enabled.
+  try {
+    const processEnv = globalThis?.process?.env;
+    for (const name of names) {
+      const value = typeof processEnv?.[name] === 'string' ? processEnv[name].trim() : '';
+      if (value) return { value, source: `process.env.${name}` };
+    }
+  } catch {}
+
+  return { value: '', source: null };
 }
 
 function extractText(data) {
@@ -78,7 +100,7 @@ async function handleApi(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   if (rateLimited(clientKey(request))) return json({ error: 'Too many requests. Please wait a minute and try again.' }, 429);
 
-  const apiKey = env.OPENAI_API_KEY;
+  const { value: apiKey } = getOpenAIKey(env);
   if (!apiKey) return json({ error: 'OPENAI_API_KEY is not configured on Cloudflare Worker.' }, 503);
 
   const body = await request.json();
@@ -159,7 +181,7 @@ async function serveAsset(request, env) {
   const bootstrap = `<script>(function(){try{var d=JSON.parse(localStorage.getItem('CS_DB')||'null');if(d&&d.settings&&typeof d.settings.apiUrl==='string'&&d.settings.apiUrl.includes('character-studio-nort9716.netlify.app')){d.settings.apiUrl='/api/generate';localStorage.setItem('CS_DB',JSON.stringify(d));}var a=localStorage.getItem('cs_api');if(a&&a.includes('character-studio-nort9716.netlify.app'))localStorage.setItem('cs_api','/api/generate');}catch(e){}})();</script>`;
   const body = migrated.includes('</body>') ? migrated.replace('</body>', `${bootstrap}</body>`) : `${migrated}${bootstrap}`;
   const headers = new Headers(response.headers);
-  headers.set('cache-control', 'no-store');
+  headers.set('cache-control', 'no-store, no-cache, must-revalidate');
   headers.delete('content-length');
   return new Response(body, { status: response.status, statusText: response.statusText, headers });
 }
@@ -168,6 +190,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
+      if (url.pathname === '/api/status') {
+        const { value, source } = getOpenAIKey(env);
+        return json({
+          ok: true,
+          worker: 'character-studio',
+          openaiKeyConfigured: Boolean(value),
+          keySource: source,
+          assetsBindingConfigured: Boolean(env?.ASSETS),
+          timestamp: new Date().toISOString()
+        });
+      }
       if (url.pathname === '/api/generate') return await handleApi(request, env);
       return await serveAsset(request, env);
     } catch (error) {
