@@ -67,7 +67,7 @@ export default async (req: Request) => {
   if (!allowedRequest(req)) return json({ error: 'Forbidden origin.' }, 403, origin);
   if (rateLimited(clientKey(req))) return json({ error: 'Too many requests. Please wait a minute and try again.' }, 429, origin);
   try {
-    const apiKey = Netlify.env.get('OPENAI_API_KEY');
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return json({ error: 'OPENAI_API_KEY is not configured on Netlify.' }, 503, origin);
     const body = await req.json();
     const prompt = String(body?.prompt || '').trim();
