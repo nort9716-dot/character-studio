@@ -18,11 +18,19 @@ async function proxyApi(request, url) {
   const contentType = request.headers.get('content-type');
   if (contentType) headers.set('content-type', contentType);
 
-  const upstream = await fetch(LEGACY_API, {
-    method: request.method,
-    headers,
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer()
-  });
+  let upstream;
+  try {
+    upstream = await fetch(LEGACY_API, {
+      method: request.method,
+      headers,
+      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer()
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: `Backend bridge failed: ${error?.message || 'upstream unavailable'}` }), {
+      status: 502,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-character-studio-backend': 'netlify-bridge' }
+    });
+  }
 
   const responseHeaders = new Headers(upstream.headers);
   responseHeaders.set('cache-control', 'no-store');
@@ -30,6 +38,21 @@ async function proxyApi(request, url) {
   responseHeaders.set('referrer-policy', 'no-referrer');
   responseHeaders.set('x-character-studio-backend', 'netlify-bridge');
   responseHeaders.delete('content-length');
+
+  if (upstream.status >= 500) {
+    const raw = await upstream.text();
+    let detail = raw.slice(0, 1200);
+    try {
+      const parsed = JSON.parse(raw);
+      detail = parsed?.error || parsed?.message || raw.slice(0, 1200);
+    } catch {}
+    return new Response(JSON.stringify({ error: `Upstream backend ${upstream.status}: ${detail}` }), {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-character-studio-backend': 'netlify-bridge' }
+    });
+  }
+
   return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: responseHeaders });
 }
 
