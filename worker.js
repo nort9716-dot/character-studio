@@ -43,7 +43,7 @@ async function serveAsset(request, env) {
     .replaceAll('https://character-studio-nort9716.netlify.app/api/generate', '/api/generate')
     .replaceAll('https://main--character-studio-nort9716.netlify.app/api/generate', '/api/generate');
 
-  const bootstrap = `<script>(function(){try{var d=JSON.parse(localStorage.getItem('CS_DB')||'null');if(d&&d.settings&&typeof d.settings.apiUrl==='string'&&d.settings.apiUrl.includes('character-studio-nort9716.netlify.app')){d.settings.apiUrl='/api/generate';localStorage.setItem('CS_DB',JSON.stringify(d));}}catch(e){}})();</script>`;
+  const bootstrap = `<script>(function(){try{var d=JSON.parse(localStorage.getItem('CS_DB')||'null');if(d&&d.settings&&typeof d.settings.apiUrl==='string'&&d.settings.apiUrl.includes('character-studio-nort9716.netlify.app')){d.settings.apiUrl='/api/generate';localStorage.setItem('CS_DB',JSON.stringify(d));}var a=localStorage.getItem('cs_api');if(a&&a.includes('character-studio-nort9716.netlify.app'))localStorage.setItem('cs_api','/api/generate');}catch(e){}})();</script>`;
   const body = migrated.includes('</body>') ? migrated.replace('</body>', `${bootstrap}</body>`) : `${migrated}${bootstrap}`;
 
   const headers = new Headers(response.headers);
